@@ -7,16 +7,17 @@ from .serializers import *
 from rest_framework.authtoken.models import Token
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.authentication import SessionAuthentication, TokenAuthentication
-from rest_framework.pagination import PageNumberPagination
 from decimal import Decimal
 from django.contrib.auth import update_session_auth_hash
-
-
+from rest_framework_simplejwt.authentication import JWTAuthentication
+from rest_framework_simplejwt.tokens import RefreshToken
 
 
 
 class ChangePasswordView(APIView):
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
+    
 
     def post(self, request):
         user = request.user
@@ -47,8 +48,14 @@ class ChangePasswordView(APIView):
 
 
 class UserInstallmentView(APIView):
-    authentication_classes = [SessionAuthentication, TokenAuthentication]
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
+    
+    def get(self,request):
+        user = User.objects.select_related('chit_plan').get(id=request.user.id)
+        payment_details = InstallmentSerializer(user).data
+        return Response(payment_details, status=status.HTTP_200_OK)
+        
 
     def post(self, request):
         user = User.objects.select_related('chit_plan').get(id=request.user.id)
@@ -60,41 +67,49 @@ class UserInstallmentView(APIView):
         installment_amount = chit_plan.plan
         payment = Decimal(request.data.get('payment', 0))  # Convert payment to Decimal
 
-        if payment <= 0:
-            return Response({"error": "Payment amount must be greater than zero."}, status=status.HTTP_400_BAD_REQUEST)
+        # if payment <= 0:
+        #     return Response({"error": "Payment amount must be greater than zero."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # Calculate total due amount (missed months + pending amount)
-        total_due = user.missed_months * installment_amount + user.pending_amount
-        remaining_payment = total_due - payment  # Both are now Decimal
+        if user.missed_months == 0 and payment >= chit_plan.plan:
+            # Calculate total due amount (missed months + pending amount)
 
+            remaining_payment = user.total_pending_amount - payment
+            print(remaining_payment)
+        
+            # Calculate total due amount (missed months + pending amount) 
+        else:
+            total_due = user.missed_months * installment_amount
+            remaining_payment = user.total_pending_amount - total_due  
+            user.missed_months = 0
+        print(remaining_payment)
         # Prevent overpayment
         if remaining_payment < 0:
             return Response({"error": "Overpayment is not allowed."}, status=status.HTTP_400_BAD_REQUEST)
 
-        # If payment covers all missed months
+        # If payment covers all missed months and pending amounts
         if remaining_payment == 0:
             user.months_paid += user.missed_months
             user.missed_months = 0
             user.pending_amount = 0
-        # If payment covers more than one month
+        # If payment covers more than one month or partial payment
         elif payment >= installment_amount:
             months_covered = payment // installment_amount
             user.months_paid += int(months_covered)
-            user.pending_amount = payment % installment_amount
-        # Partial payment
-        else:
-            user.pending_amount += payment
-
+            # user.pending_amount = payment % installment_amount
+        # else:
+        #     user.pending_amount -= payment
+        print(payment)
+        print(remaining_payment)
         # Update total amounts
         user.total_amount_paid += payment
-        user.total_pending_amount = remaining_payment
+
         user.save()
 
         return Response({"message": "Installment payment processed successfully."}, status=status.HTTP_200_OK)
 
 
 class UserView(APIView):
-    authentication_classes = [SessionAuthentication, TokenAuthentication]
+    authentication_classes = [JWTAuthentication]
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -106,6 +121,9 @@ class UserView(APIView):
 
 
 class LoginView(APIView):
+    authentication_classes = []  # Disable authentication
+    permission_classes = [] 
+    
     def post(self, request):
         serializer = LoginSerializer(data=request.data)
         if not serializer.is_valid():
@@ -116,9 +134,18 @@ class LoginView(APIView):
 
         user_obj = authenticate(username=username, password=password)
         if user_obj:
-            token, _ = Token.objects.get_or_create(user=user_obj)
-            return Response({"message": "Login successful", "username": username, "token": str(token)}, status=status.HTTP_200_OK)
+            token = RefreshToken.for_user(user_obj)
+            return Response({
+                "message": "Login successful", 
+                "username": username, 
+                "access_token": str(token.access_token),
+                "refresh_token": str(token)
+                
+                })
         return Response({"error": "Invalid username or password"}, status=status.HTTP_401_UNAUTHORIZED)
+    
+    def get(self,request):
+        return Response({"Success"})
 
 
 # class PaymentPagination(PageNumberPagination):

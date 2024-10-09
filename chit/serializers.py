@@ -18,12 +18,24 @@ class PaymentSerializer(serializers.ModelSerializer):
         fields = ['chit_plan_id', 'installment_number', 'amount_paid', 'status']
 
 
+
 class ChitPlanSerializer(serializers.ModelSerializer):
     chit_id = serializers.IntegerField(source='id')
     
     class Meta:
         model = ChitPlan
         fields = ['plan', 'chit_id']
+
+
+class InstallmentSerializer(serializers.ModelSerializer):
+    
+
+    class Meta:
+        model = User
+        fields = ['total_amount_paid','total_pending_amount','installment_number','missed_months']
+
+
+
 
 
 class UserSerializer(serializers.ModelSerializer):

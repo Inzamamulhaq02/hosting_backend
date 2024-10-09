@@ -16,6 +16,11 @@ def main():
             "forget to activate a virtual environment?"
         ) from exc
     execute_from_command_line(sys.argv)
+    # port = os.getenv('X_ZOHO_CATALYST_LISTEN_PORT', '3001')
+
+    # # Run Django server on dynamically allocated port
+    # execute_from_command_line([sys.argv[0], 'runserver', port])
+
 
 
 if __name__ == '__main__':

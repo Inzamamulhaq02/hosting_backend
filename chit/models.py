@@ -25,7 +25,6 @@ class ChitPlan(models.Model):
         (500, '500'),
         (1000, '1000'),
     ]
-    
     plan = models.IntegerField(choices=PLAN_CHOICES, default=500)
     interest_amount = models.DecimalField(max_digits=10, decimal_places=2, default=750)
     duration = models.PositiveIntegerField(default=11)
@@ -50,6 +49,9 @@ class User(AbstractUser):
     total_amount_paid = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     total_pending_amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     first_time = models.BooleanField(default=True)
+    
+    # New field to track the current installment month
+    installment_number = models.PositiveIntegerField(default=1)
 
     def get_chit_plan_value(self):
         return self.chit_plan.plan if self.chit_plan else None
@@ -75,7 +77,16 @@ class User(AbstractUser):
             self.months_paid += self.missed_months
             self.missed_months = 0
             self.pending_amount = 0
+            self.current_installment_month += 1  # Update the installment month
             self.save()
+            
+    def reduce_pending_amount(self, amount):
+        """Reduce the pending amount by the given amount."""
+        if amount >= self.pending_amount:
+            self.pending_amount = 0
+        else:
+            self.pending_amount -= amount
+        self.save()
 
     def calculate_final_payout(self):
         """Calculate the final payout after 11 months."""
@@ -104,18 +115,24 @@ def log_user_deletion(sender, instance, **kwargs):
     )
 
 
+from django.utils import timezone
+from django.db import models
+
 class Payment(models.Model):
-    PAYMENT_STATUS = [
-        ('Paid', 'Paid'),
-        ('Pending', 'Pending'),
-    ]
-    
     user = models.ForeignKey(User, on_delete=models.CASCADE, related_name='payments')
     chit_plan = models.ForeignKey(ChitPlan, on_delete=models.CASCADE, related_name='payments')
     installment_number = models.PositiveIntegerField()
     amount_paid = models.DecimalField(max_digits=10, decimal_places=2)
     date_paid = models.DateTimeField(default=timezone.now)
-    status = models.CharField(max_length=10, choices=PAYMENT_STATUS, default='Pending')
+    status = models.CharField(max_length=10, default='Paid')
+    last_payment_date = models.DateTimeField(null=True, blank=True)
+    last_payment_amount = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
 
     def __str__(self):
         return f'User: {self.user.username} | Installment: {self.installment_number} | Amount: {self.amount_paid} | Status: {self.status}'
+
+    def save(self, *args, **kwargs):
+        # Automatically update last payment fields when saving a payment
+        self.last_payment_date = timezone.now()
+        self.last_payment_amount = self.amount_paid
+        super(Payment, self).save(*args, **kwargs)

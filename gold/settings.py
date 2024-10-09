@@ -27,6 +27,12 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['*']
 
+CSRF_TRUSTED_ORIGINS = [
+    
+    # NOTE: Place your custom url here if any
+]
+
+
 
 # Application definition
 
@@ -39,11 +45,14 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'chit',
     'rest_framework',
+    'rest_framework_simplejwt',
     'rest_framework.authtoken',
+    'corsheaders'
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -56,12 +65,32 @@ ROOT_URLCONF = 'gold.urls'
 # settings.py
 AUTH_USER_MODEL = 'chit.User'  # Make sure to use your custom User model
 
+# REST_FRAMEWORK = {
+#     'DEFAULT_AUTHENTICATION_CLASSES': [
+#         'rest_framework.authentication.SessionAuthentication',
+#         'rest_framework.authentication.BasicAuthentication',
+#         'rest_framework.authentication.TokenAuthentication',
+#     ]
+# }
+
+from datetime import timedelta # import this library top of the settings.py file
+
+# put on your settings.py file below INSTALLED_APPS
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': [
-        'rest_framework.authentication.SessionAuthentication',
-        'rest_framework.authentication.BasicAuthentication',
-        'rest_framework.authentication.TokenAuthentication',
-    ]
+    'DEFAULT_PERMISSION_CLASSES': (
+        'rest_framework.permissions.IsAuthenticated',
+    ),
+    'DEFAULT_AUTHENTICATION_CLASSES': (
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
+    ),
+}
+
+SIMPLE_JWT = {
+    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=60),
+    'SLIDING_TOKEN_REFRESH_LIFETIME': timedelta(days=1),
+    'SLIDING_TOKEN_LIFETIME': timedelta(days=30),
+    'SLIDING_TOKEN_REFRESH_LIFETIME_LATE_USER': timedelta(days=1),
+    'SLIDING_TOKEN_LIFETIME_LATE_USER': timedelta(days=30),
 }
 
 
@@ -99,6 +128,12 @@ WSGI_APPLICATION = 'gold.wsgi.application'
 # }
 
 
+DATABASES = {
+    "default": {
+        "ENGINE": "django.db.backends.sqlite3",
+        "NAME": "mydatabase",
+    }
+}
 
 DATABASES = {
     'default': {
@@ -127,6 +162,27 @@ DATABASES['default']['OPTIONS'] = {
 }
 
 
+# DATABASES = {
+#     "default": {
+#         "ENGINE": "django.db.backends.postgresql_psycopg2",
+#         "NAME": 'railway',
+#         "USER": 'postgres',
+#         "PASSWORD": 'nQqhPKzTNSPrtMJJqkDcRXpMJgAHUoOD',
+#         "HOST": 'postgres.railway.internal',
+#         "PORT":'5432',
+#     }
+# }
+
+# DATABASES = {
+#     "default": {
+#         "ENGINE": "django.db.backends.mysql",
+#         "NAME": os.getenv("MARIADB_DATABASE"),
+#         "USER": os.getenv("MARIADB_USER"),
+#         "PASSWORD": os.getenv("MARIADB_ROOT_PASSWORD"),
+#         "HOST": os.getenv("MARIADB_HOST"),
+#         "PORT": os.getenv("MARIADB_PORT", 3306),
+#     }
+# }
 
 
 
