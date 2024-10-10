@@ -134,5 +134,4 @@ class Payment(models.Model):
     def save(self, *args, **kwargs):
         # Automatically update last payment fields when saving a payment
         self.last_payment_date = timezone.now()
-        self.last_payment_amount = self.amount_paid
         super(Payment, self).save(*args, **kwargs)
