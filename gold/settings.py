@@ -116,16 +116,16 @@ WSGI_APPLICATION = 'gold.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.mysql', 
-        'NAME': 'chit',
-        'USER': 'root',
-        'PASSWORD': 'root',
-        'HOST': 'localhost',   # Or an IP Address that your DB is hosted on
-        'PORT': '3306',
-    }
-}
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.mysql', 
+#         'NAME': 'chit',
+#         'USER': 'root',
+#         'PASSWORD': 'root',
+#         'HOST': 'localhost',   # Or an IP Address that your DB is hosted on
+#         'PORT': '3306',
+#     }
+# }
 
 
 # DATABASES = {
@@ -135,31 +135,31 @@ DATABASES = {
 #     }
 # }
 
-# DATABASES = {
-#     'default': {
-#         'ENGINE': 'django.db.backends.mysql',
-#         'NAME': 'bec67ijpxesfqd4cdq3f',
-#         'USER': 'ueti7bte5qnrumgu',
-#         'PASSWORD': 'doP6kM3a5Q4KdDT9eNg8',
-#         'HOST': 'bec67ijpxesfqd4cdq3f-mysql.services.clever-cloud.com',
-#         'PORT': '3306',
-#     }
-# }
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'bec67ijpxesfqd4cdq3f',
+        'USER': 'ueti7bte5qnrumgu',
+        'PASSWORD': 'doP6kM3a5Q4KdDT9eNg8',
+        'HOST': 'bec67ijpxesfqd4cdq3f-mysql.services.clever-cloud.com',
+        'PORT': '3306',
+    }
+}
 
-# import os
-# import dj_database_url
-# # Optionally, override using dj_database_url if DATABASE_URL is set in the environment
-# DATABASES['default'] = dj_database_url.parse(
-#     "mysql://ueti7bte5qnrumgu:doP6kM3a5Q4KdDT9eNg8@bec67ijpxesfqd4cdq3f-mysql.services.clever-cloud.com:3306/bec67ijpxesfqd4cdq3f",
-#     conn_max_age=600,
-#     ssl_require=True
-# )
-# MYSQL_ATTR_SSL_CA='/etc/ssl/cert.pem'
-# # Set the charset and SSL options
-# DATABASES['default']['OPTIONS'] = {
-#     'charset': 'utf8mb4',
-#     'ssl': {'ca': os.environ.get('/etc/ssl/cert.pem')}
-# }
+import os
+import dj_database_url
+# Optionally, override using dj_database_url if DATABASE_URL is set in the environment
+DATABASES['default'] = dj_database_url.parse(
+    "mysql://ueti7bte5qnrumgu:doP6kM3a5Q4KdDT9eNg8@bec67ijpxesfqd4cdq3f-mysql.services.clever-cloud.com:3306/bec67ijpxesfqd4cdq3f",
+    conn_max_age=600,
+    ssl_require=True
+)
+MYSQL_ATTR_SSL_CA='/etc/ssl/cert.pem'
+# Set the charset and SSL options
+DATABASES['default']['OPTIONS'] = {
+    'charset': 'utf8mb4',
+    'ssl': {'ca': os.environ.get('/etc/ssl/cert.pem')}
+}
 
 
 # DATABASES = {
