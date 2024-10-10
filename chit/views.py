@@ -80,8 +80,15 @@ class UserInstallmentView(APIView):
         # if last_payment and last_payment.date_paid.month == timezone.now().month:
         #     return Response({"error": "You have already made a payment for this month."},
         #                     status=status.HTTP_400_BAD_REQUEST)
+  
+        if installment_amount > payment:
+            # print(installment_amount)
+            # print(payment)
+            return Response({"error":f"payment is not less then {installment_amount}"})  
+        # Prevent overpayment
+
             
-            
+                     
         if user.missed_months == 0 and payment >= chit_plan.plan:
    
             # Calculate total due amount (missed months + pending amount)
@@ -98,11 +105,10 @@ class UserInstallmentView(APIView):
             total_due = user.missed_months * installment_amount
             remaining_payment = user.total_pending_amount - total_due  
             user.missed_months = 0
-
-        # Prevent overpayment
+        
         if payment > remaining_payment:
             return Response({"error": f"Overpayment not allowed. Your remaining balance is {remaining_payment}."},
-                            status=status.HTTP_400_BAD_REQUEST)
+                            status=status.HTTP_400_BAD_REQUEST)  
 
         # If payment covers all missed months and pending amounts
         if remaining_payment == 0:
@@ -116,10 +122,11 @@ class UserInstallmentView(APIView):
             # user.pending_amount = payment % installment_amount
         # else:
         #     user.pending_amount -= payment
-        print(payment)
-        print(remaining_payment)
+
         # Update total amounts
         user.total_amount_paid += payment
+        
+        print(payment)
         
         Payment.objects.create(
             user=user,
