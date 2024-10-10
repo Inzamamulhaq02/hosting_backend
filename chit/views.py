@@ -182,7 +182,7 @@ class LoginView(APIView):
         return Response({"error": "Invalid username or password","status":400}, status=status.HTTP_401_UNAUTHORIZED)
     
     def get(self,request):
-        return Response({"Get Method Success"})
+        return Response({"Success"})
 
 
 # class PaymentPagination(PageNumberPagination):
