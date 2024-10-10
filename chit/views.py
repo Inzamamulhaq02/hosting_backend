@@ -61,30 +61,48 @@ class UserInstallmentView(APIView):
         user = User.objects.select_related('chit_plan').get(id=request.user.id)
         chit_plan = user.chit_plan
         
+        if user.total_pending_amount == user.total_amount_paid:
+            return Response({"message":"Your Already Completed The Chit Plan Claim Your Gold",
+                             "Amount Paid":user.total_amount_paid,
+                             "Bonus Amount":user.chit_plan.interest_amount,
+                             "Final Amount":user.total_amount_paid+user.chit_plan.interest_amount
+                             })
+        
+        
         if not chit_plan:
             return Response({"error": "No chit plan assigned."}, status=status.HTTP_400_BAD_REQUEST)
 
         installment_amount = chit_plan.plan
         payment = Decimal(request.data.get('payment', 0))  # Convert payment to Decimal
 
-        # if payment <= 0:
-        #     return Response({"error": "Payment amount must be greater than zero."}, status=status.HTTP_400_BAD_REQUEST)
-
+        
+        # last_payment = Payment.objects.filter(user=user, chit_plan=chit_plan).order_by('-date_paid').first()
+        # if last_payment and last_payment.date_paid.month == timezone.now().month:
+        #     return Response({"error": "You have already made a payment for this month."},
+        #                     status=status.HTTP_400_BAD_REQUEST)
+            
+            
         if user.missed_months == 0 and payment >= chit_plan.plan:
+   
             # Calculate total due amount (missed months + pending amount)
+            last_payment = Payment.objects.filter(user=user, chit_plan=chit_plan).order_by('-date_paid').first()
+            if last_payment and last_payment.date_paid.month == timezone.now().month:
+                return Response({"error": "You have already made a payment for this month."},
+                            status=status.HTTP_400_BAD_REQUEST)
 
             remaining_payment = user.total_pending_amount - payment
-            print(remaining_payment)
+
         
             # Calculate total due amount (missed months + pending amount) 
         else:
             total_due = user.missed_months * installment_amount
             remaining_payment = user.total_pending_amount - total_due  
             user.missed_months = 0
-        print(remaining_payment)
+
         # Prevent overpayment
-        if remaining_payment < 0:
-            return Response({"error": "Overpayment is not allowed."}, status=status.HTTP_400_BAD_REQUEST)
+        if payment > remaining_payment:
+            return Response({"error": f"Overpayment not allowed. Your remaining balance is {remaining_payment}."},
+                            status=status.HTTP_400_BAD_REQUEST)
 
         # If payment covers all missed months and pending amounts
         if remaining_payment == 0:
@@ -102,6 +120,16 @@ class UserInstallmentView(APIView):
         print(remaining_payment)
         # Update total amounts
         user.total_amount_paid += payment
+        
+        Payment.objects.create(
+            user=user,
+            chit_plan=chit_plan,
+            installment_number=user.months_paid,  # Update based on logic
+            amount_paid=user.total_amount_paid,
+            status='Paid',
+            last_payment_date=timezone.now(),
+            last_payment_amount=payment
+        )
 
         user.save()
 
@@ -113,7 +141,15 @@ class UserView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
+        user = User.objects.select_related('chit_plan').get(id=request.user.id)
         # Apply select_related to optimize chit_plan retrieval
+        if user.total_pending_amount == user.total_amount_paid:
+            return Response({"message":"Your Already Completed The Chit Plan Claim Your Gold",
+                        "Amount Paid":user.total_amount_paid,
+                        "Bonus Amount":user.chit_plan.interest_amount,
+                        "Final Amount":user.total_amount_paid+user.chit_plan.interest_amount
+                        })
+        
         user = User.objects.select_related('chit_plan').get(id=request.user.id)
         user_serializer = UserSerializer(user).data
         return Response(user_serializer, status=status.HTTP_200_OK)
@@ -136,16 +172,17 @@ class LoginView(APIView):
         if user_obj:
             token = RefreshToken.for_user(user_obj)
             return Response({
+                "status":200,
                 "message": "Login successful", 
                 "username": username, 
                 "access_token": str(token.access_token),
                 "refresh_token": str(token)
                 
                 })
-        return Response({"error": "Invalid username or password"}, status=status.HTTP_401_UNAUTHORIZED)
+        return Response({"error": "Invalid username or password","status":400}, status=status.HTTP_401_UNAUTHORIZED)
     
     def get(self,request):
-        return Response({"Success"})
+        return Response({"Get Method Success"})
 
 
 # class PaymentPagination(PageNumberPagination):

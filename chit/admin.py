@@ -5,7 +5,12 @@ from .models import UserActionLog
 from django.contrib.auth.admin import UserAdmin
 from .models import User 
 
-admin.site.register(Payment)
+class PaymentAdmin(admin.ModelAdmin):
+    list_display = ('user', 'chit_plan', 'installment_number', 'amount_paid', 'date_paid', 'status', 'last_payment_date', 'last_payment_amount')
+    list_filter = ('user', 'chit_plan', 'status')
+    search_fields = ('user__username', 'chit_plan__name')
+
+admin.site.register(Payment, PaymentAdmin)
 
 
 class ChitPlanAdmin(admin.ModelAdmin):

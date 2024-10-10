@@ -37,7 +37,7 @@ class ChitPlan(models.Model):
         super(ChitPlan, self).save(*args, **kwargs)
 
     def __str__(self):
-        return f"Plan {self.plan} | Duration: {self.duration} months | Interest: {self.interest_amount} | Total Amount: {self.total_amount}"
+        return f"Plan {self.plan}"
 
 
 class User(AbstractUser):
