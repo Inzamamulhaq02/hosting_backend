@@ -136,16 +136,18 @@ class LoginView(APIView):
         if user_obj:
             token = RefreshToken.for_user(user_obj)
             return Response({
+                "status":200,
                 "message": "Login successful", 
                 "username": username, 
                 "access_token": str(token.access_token),
                 "refresh_token": str(token)
                 
                 })
-        return Response({"error": "Invalid username or password"}, status=status.HTTP_401_UNAUTHORIZED)
+        return Response({"error": "Invalid username or password","status":400}, status=status.HTTP_401_UNAUTHORIZED)
     
     def get(self,request):
-        return Response({"Success"})
+        return Response({"Get Method Success"})
+
 
 
 # class PaymentPagination(PageNumberPagination):
